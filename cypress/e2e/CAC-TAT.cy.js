@@ -8,6 +8,9 @@ describe('Central de Atendimento ao Cliente TAT', () => {
   })
 
   it('Preencher os campos obrigatórios e envia o formulário aplicação', () => {
+    //Congelando o relógio do navegador
+    cy.clock()
+
     //Declarando uma variável e dizendo quantas vezes ela será repetida na tela
     const longText = Cypress._.repeat('Eu amo o Santos FC', 10)
 
@@ -42,6 +45,11 @@ describe('Central de Atendimento ao Cliente TAT', () => {
 
     //Validar mensagem de sucesso
     cy.get('.success').should('be.visible')
+
+    //Avançando 3 segundos no navegador
+    cy.tick(3000)
+
+    cy.get('.success').should('not.be.visible')
   })
 
   it('Exibir mensagem de erro ao submeter o formulário com um email com formatação inválida', () => {
@@ -296,9 +304,13 @@ describe('Central de Atendimento ao Cliente TAT', () => {
     cy.get('select[id="product"]').select(1).should('have.value', 'blog')
   })
 
-  it('Marcar o tipo de atendimento "Feedback"', () => {
-    //escolher Feedback
-    cy.get('input[type="radio"][value="feedback"]').check().should('be.checked')
+  Cypress._.times(5, () => {
+    it('Marcar o tipo de atendimento "Feedback"', () => {
+      //escolher Feedback
+      cy.get('input[type="radio"][value="feedback"]')
+        .check()
+        .should('be.checked')
+    })
   })
 
   it('Marcar cada tipo de atendimento', () => {
@@ -377,5 +389,54 @@ describe('Central de Atendimento ao Cliente TAT', () => {
     ).should('be.visible')
 
     cy.contains('p', 'Talking About Testing').should('be.visible')
+  })
+
+  it('exibe e oculta as mensagens de sucesso e erro usando .invoke()', () => {
+    cy.get('.success')
+      .should('not.be.visible')
+      .invoke('show')
+      .should('be.visible')
+      .and('contain', 'Mensagem enviada com sucesso.')
+      .invoke('hide')
+      .should('not.be.visible')
+    cy.get('.error')
+      .should('not.be.visible')
+      .invoke('show')
+      .should('be.visible')
+      .and('contain', 'Valide os campos obrigatórios!')
+      .invoke('hide')
+      .should('not.be.visible')
+  })
+
+  it('Preencher o campo da área de texto usando o comando invoke', () => {
+    cy.get('#open-text-area')
+      .invoke('val', 'um texto qualquer')
+      .should('have.value', 'um texto qualquer')
+  })
+
+  it('Fazer uma requisição HTTP', () => {
+    cy.request('https://cac-tat-v3.s3.eu-central-1.amazonaws.com/index.html')
+      .as('getRequest')
+      .its('status')
+      .should('be.equal', 200)
+
+    cy.get('@getRequest').its('statusText').should('be.equal', 'OK')
+
+    cy.get('@getRequest').its('body').should('include', 'CAC TAT')
+  })
+
+  it('Encontrar o gato', () => {
+    cy.request(
+      'https://cac-tat-v3.s3.eu-central-1.amazonaws.com/index.html'
+    ).as('getRequest')
+
+    cy.get('@getRequest').its('body').should('include', '🐈')
+  })
+
+  it('Encontrar o gato com o "invoke"', () => {
+    cy.get('#cat').invoke('show').should('be.visible')
+
+    cy.get('#title').invoke('text', 'SANDINHO QA')
+    cy.get('#subtitle').invoke('text', 'Quem acredita sempre alcança!')
   })
 })
